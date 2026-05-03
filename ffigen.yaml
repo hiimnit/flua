@@ -1,0 +1,16 @@
+# Run with `dart run ffigen --config ffigen.yaml`.
+name: FluaBindings
+description: |
+  Bindings for `src/flua.h`.
+
+  Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
+output: 'lib/flua_bindings_generated.dart'
+headers:
+  entry-points:
+    - 'src/flua.h'
+  include-directives:
+    - 'src/flua.h'
+ffi-native:
+comments:
+  style: any
+  length: full
