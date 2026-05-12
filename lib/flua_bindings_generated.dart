@@ -13,6 +13,9 @@ external void flua_close(flua_State state);
 @ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
 external int flua_do_string(flua_State state, ffi.Pointer<ffi.Char> code);
 
+@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>)>()
+external void flua_set_global(flua_State state, ffi.Pointer<ffi.Char> name);
+
 @ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>, ffi.Int64)>()
 external void flua_set_global_int(
   flua_State state,
@@ -61,6 +64,30 @@ external void flua_push_bool(flua_State state, int value);
 @ffi.Native<ffi.Void Function(flua_State)>()
 external void flua_push_nil(flua_State state);
 
+@ffi.Native<ffi.Void Function(flua_State)>()
+external void flua_new_table(flua_State state);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int)>()
+external void flua_create_table(flua_State state, int narray, int nrec);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Pointer<ffi.Char>)>()
+external void flua_set_field(
+  flua_State state,
+  int idx,
+  ffi.Pointer<ffi.Char> name,
+);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
+external void flua_set_table(flua_State state, int idx);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int64)>()
+external void flua_set_index(flua_State state, int idx, int n);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int64)>()
+external void flua_raw_set_index(flua_State state, int idx, int n);
+
+/// TODO: flua_push_table - Map<string, dynamic>
+/// TODO: flua_push_function - generic c function that calls dart?
 @ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
 external int flua_get_global_type(flua_State state, ffi.Pointer<ffi.Char> name);
 
@@ -112,8 +139,8 @@ external ffi.Pointer<ffi.Char> flua_error(flua_State state);
 @ffi.Native<ffi.Int Function(flua_State)>()
 external int flua_gettop(flua_State state);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_pop(flua_State state, int n);
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
+external void flua_pop(flua_State state, int n);
 
 @ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
 external int flua_type(flua_State state, int idx);

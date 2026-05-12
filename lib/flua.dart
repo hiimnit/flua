@@ -32,32 +32,38 @@ enum LuaType {
   }
 }
 
-class LuaState {
+class LuaState implements Finalizable {
   final bindings.flua_State _state;
-  final _finalizer = Finalizer<bindings.flua_State>(_nativeClose);
+  bool _closed = false;
 
-  bool get _isValid => _state.address != 0;
+  static final _finalizer = NativeFinalizer(
+    Native.addressOf(bindings.flua_close),
+  );
 
   void _checkValid() {
-    if (!_isValid) {
+    if (_closed) {
       throw LuaException('Lua state has been closed');
     }
   }
 
   LuaState() : _state = bindings.flua_create() {
     if (_state.address == 0) {
+      // TODO is this necessary?
       throw LuaException('Failed to create Lua state');
     }
-    _finalizer.attach(this, _state);
+    _finalizer.attach(this, _state, detach: this);
   }
 
-  static void _nativeClose(bindings.flua_State ptr) {
-    if (ptr.address != 0) {
-      bindings.flua_close(ptr);
+  void close() {
+    if (_closed) {
+      return;
     }
+    _closed = true;
+    _finalizer.detach(this);
+    bindings.flua_close(_state);
   }
 
-  bool get isClosed => !_isValid;
+  bool get isClosed => _closed;
 
   void doString(String code) {
     _checkValid();
@@ -88,13 +94,14 @@ class LuaState {
     }
   }
 
-  dynamic operator [](String name) {
+  Object? operator [](String name) {
     _checkValid();
     final nativeName = name.toNativeUtf8();
     try {
       final type = LuaType.fromValue(
         bindings.flua_get_global_type(_state, nativeName.cast()),
       ); // TODO: getting type and then value? not at once?
+      // TODO: wrap the returned value?
       switch (type) {
         case LuaType.nil:
           return null;
@@ -120,44 +127,51 @@ class LuaState {
     }
   }
 
-  void operator []=(String name, dynamic value) {
+  void operator []=(String name, Object? value) {
     _checkValid();
     final nativeName = name.toNativeUtf8();
     try {
-      if (value == null) {
-        bindings.flua_set_global_nil(_state, nativeName.cast());
-      } else if (value is bool) {
-        bindings.flua_set_global_bool(_state, nativeName.cast(), value ? 1 : 0);
-      } else if (value is int) {
-        bindings.flua_set_global_int(_state, nativeName.cast(), value);
-      } else if (value is double) {
-        bindings.flua_set_global_double(_state, nativeName.cast(), value);
-      } else if (value is num) {
-        bindings.flua_set_global_double(
-          _state,
-          nativeName.cast(),
-          value.toDouble(),
-        );
-      } else if (value is String) {
-        final nativeValue = value.toNativeUtf8();
-        try {
-          bindings.flua_set_global_string(
-            _state,
-            nativeName.cast(),
-            nativeValue.cast(),
-          );
-        } finally {
-          malloc.free(nativeValue);
-        }
-      } else {
-        throw LuaException('Unsupported type: ${value.runtimeType}');
-      }
+      _pushValue(value);
+      bindings.flua_set_global(_state, nativeName.cast());
     } finally {
       malloc.free(nativeName);
     }
   }
 
-  List<dynamic> call(String funcName, [List<dynamic> args = const []]) {
+  void _pushNewStringMapTable(Map<String, dynamic> table) {
+    bindings.flua_new_table(_state); // TODO: lua_createtable?
+
+    for (final MapEntry(:key, :value) in table.entries) {
+      final nativeKey = key.toNativeUtf8();
+      try {
+        _pushValue(value);
+        bindings.flua_set_field(_state, -2, nativeKey.cast());
+      } finally {
+        malloc.free(nativeKey);
+      }
+    }
+  }
+
+  void _pushNewMapTable(Map table) {
+    bindings.flua_new_table(_state); // TODO: lua_createtable?
+
+    for (final MapEntry(:key, :value) in table.entries) {
+      _pushValue(key);
+      _pushValue(value);
+      bindings.flua_set_table(_state, -3);
+    }
+  }
+
+  void _pushNewListTable(List<dynamic> list) {
+    bindings.flua_new_table(_state); // TODO: lua_createtable?
+
+    for (final (i, value) in list.indexed) {
+      _pushValue(value);
+      bindings.flua_raw_set_index(_state, -2, i + 1);
+    }
+  }
+
+  List<Object?> call(String funcName, [List<Object?> args = const []]) {
     _checkValid();
     final nativeName = funcName.toNativeUtf8();
     try {
@@ -172,6 +186,7 @@ class LuaState {
       }
       for (final arg in args) {
         _pushValue(arg);
+        // TODO: luaL_checkstack
       }
       final status = bindings.flua_pcall(_state, args.length);
       if (status != 0) {
@@ -182,17 +197,13 @@ class LuaState {
         throw LuaException(error);
       }
 
-      final results = _popResults(pretop);
-      if (results.isNotEmpty) {
-        bindings.flua_pop(_state, results.length);
-      }
-      return results;
+      return _popResults(pretop);
     } finally {
       malloc.free(nativeName);
     }
   }
 
-  void _pushValue(dynamic value) {
+  void _pushValue(Object? value) {
     if (value == null) {
       bindings.flua_push_nil(_state);
     } else if (value is bool) {
@@ -201,6 +212,8 @@ class LuaState {
       bindings.flua_push_int(_state, value);
     } else if (value is double) {
       bindings.flua_push_double(_state, value);
+    } else if (value is num) {
+      bindings.flua_push_double(_state, value.toDouble());
     } else if (value is String) {
       final nativeValue = value.toNativeUtf8();
       try {
@@ -208,14 +221,20 @@ class LuaState {
       } finally {
         malloc.free(nativeValue);
       }
+    } else if (value is Map<String, dynamic>) {
+      _pushNewStringMapTable(value);
+    } else if (value is Map) {
+      _pushNewMapTable(value);
+    } else if (value is List<dynamic>) {
+      _pushNewListTable(value);
     } else {
       // TODO: ???
     }
   }
 
-  List<dynamic> _popResults(int pretop) {
+  List<Object?> _popResults(int pretop) {
     final count = bindings.flua_gettop(_state) - pretop;
-    final results = <dynamic>[];
+    final results = <Object?>[];
     for (int i = 0; i < count; ++i) {
       final stackIndex = -(count - i);
       final type = bindings.flua_type(_state, stackIndex);
@@ -241,8 +260,18 @@ class LuaState {
           results.add(null);
       }
     }
+
+    if (results.isNotEmpty) {
+      bindings.flua_pop(_state, results.length);
+    }
+
     return results;
   }
+
+  // TODO: tmp methods? doStringWithReturn?
+  int top() => bindings.flua_gettop(_state);
+
+  List<Object?> popResults(int pretop) => _popResults(pretop);
 }
 
 class _LuaFunction {

@@ -28,6 +28,11 @@ FFI_PLUGIN_EXPORT int flua_do_string(flua_State state, const char* code) {
   return luaL_dostring(L, code);
 }
 
+FFI_PLUGIN_EXPORT void flua_set_global(flua_State state, const char* name) {
+  lua_State* L = (lua_State*)state;
+  lua_setglobal(L, name);
+}
+
 FFI_PLUGIN_EXPORT void flua_set_global_int(flua_State state, const char* name, int64_t value) {
   lua_State* L = (lua_State*)state;
   lua_pushinteger(L, (lua_Integer)value);
@@ -83,6 +88,37 @@ FFI_PLUGIN_EXPORT void flua_push_nil(flua_State state) {
   lua_pushnil(L);
 }
 
+FFI_PLUGIN_EXPORT void flua_new_table(flua_State state) {
+  lua_State* L = (lua_State*)state;
+  lua_newtable(L);
+}
+
+FFI_PLUGIN_EXPORT void flua_create_table(flua_State state, int narray, int nrec) {
+  lua_State* L = (lua_State*)state;
+  lua_createtable(state, narray, nrec);
+}
+
+FFI_PLUGIN_EXPORT void flua_set_field(flua_State state, int idx, const char* name) {
+  lua_State* L = (lua_State*)state;
+  lua_setfield(L, idx, name);
+}
+
+FFI_PLUGIN_EXPORT void flua_set_table(flua_State state, int idx) {
+  lua_State* L = (lua_State*)state;
+  lua_settable(L, idx);
+}
+
+
+FFI_PLUGIN_EXPORT void flua_set_index(flua_State state, int idx, int64_t n) {
+  lua_State* L = (lua_State*)state;
+  lua_seti(L, idx, (lua_Integer)n);
+}
+
+FFI_PLUGIN_EXPORT void flua_raw_set_index(flua_State state, int idx, int64_t n) {
+  lua_State* L = (lua_State*)state;
+  lua_rawseti(L, idx, (lua_Integer)n);
+}
+
 FFI_PLUGIN_EXPORT int flua_get_global_type(flua_State state, const char* name) {
   lua_State* L = (lua_State*)state;
   lua_getglobal(L, name);
@@ -107,14 +143,12 @@ FFI_PLUGIN_EXPORT double flua_get_global_double(flua_State state, const char* na
   return value;
 }
 
-static const char* last_string_result = NULL; // FIXME what is this?
-
 FFI_PLUGIN_EXPORT const char* flua_get_global_string(flua_State state, const char* name) {
   lua_State* L = (lua_State*)state;
   lua_getglobal(L, name);
-  last_string_result = lua_tostring(L, -1);
+  char* string = lua_tostring(L, -1);
   lua_pop(L, 1);
-  return last_string_result;
+  return string;
 }
 
 FFI_PLUGIN_EXPORT int flua_get_global_bool(flua_State state, const char* name) {
@@ -146,7 +180,7 @@ FFI_PLUGIN_EXPORT int flua_pcall(flua_State state,  int arg_count) {
 
 FFI_PLUGIN_EXPORT int64_t flua_call_result_int(flua_State state, int idx) {
   lua_State* L = (lua_State*)state;
-  int64_t value = (int64_t)lua_tointeger(L, idx); // FIXME: use the same type as lua?
+  int64_t value = (int64_t)lua_tointeger(L, idx);
   return value;
 }
 
@@ -158,8 +192,7 @@ FFI_PLUGIN_EXPORT double flua_call_result_double(flua_State state, int idx) {
 
 FFI_PLUGIN_EXPORT const char* flua_call_result_string(flua_State state, int idx) {
   lua_State* L = (lua_State*)state;
-  last_string_result = lua_tostring(L, idx);
-  return last_string_result;
+  return lua_tostring(L, idx);
 }
 
 FFI_PLUGIN_EXPORT int flua_call_result_bool(flua_State state, int idx) {

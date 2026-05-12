@@ -15,6 +15,117 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  int currentPageIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Flua Demo')),
+        body: switch (currentPageIndex) {
+          0 => SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: _TestWidget(),
+          ),
+          _ => Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _ReplWidget(),
+          ),
+        },
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: currentPageIndex,
+          onDestinationSelected: (int index) {
+            setState(() {
+              currentPageIndex = index;
+            });
+          },
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.text_decrease_sharp),
+              label: 'Test',
+            ),
+            NavigationDestination(icon: Icon(Icons.explore), label: 'REPL'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplWidget extends StatefulWidget {
+  const _ReplWidget();
+
+  @override
+  State<_ReplWidget> createState() => __ReplWidgetState();
+}
+
+class __ReplWidgetState extends State<_ReplWidget> {
+  final output = ListChangeNotifier<String>();
+  final state = LuaState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Expanded(
+          child: ListenableBuilder(
+            listenable: output,
+            builder: (context, child) => ListView.builder(
+              shrinkWrap: true,
+              itemCount: output.length,
+              itemBuilder: (context, index) {
+                final line = output[index];
+
+                return Text(line);
+              },
+            ),
+          ),
+        ),
+        TextField(
+          onSubmitted: (value) {
+            try {
+              output.add(value);
+
+              final pretop = state.top();
+              state.doString(value);
+
+              final results = state.popResults(pretop);
+              final printedResult = results.isEmpty
+                  ? '> '
+                  : '> ${results.map((e) => e.toString()).join(', ')}';
+              output.add(printedResult);
+            } catch (e) {
+              output.add('ERROR: $e');
+            }
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class ListChangeNotifier<T> with ChangeNotifier {
+  final List<T> list = [];
+
+  void add(T value) {
+    list.add(value);
+    notifyListeners();
+  }
+
+  int get length => list.length;
+
+  T operator [](int index) => list[index];
+}
+
+class _TestWidget extends StatefulWidget {
+  const _TestWidget();
+
+  @override
+  State<_TestWidget> createState() => _TestWidgetState();
+}
+
+class _TestWidgetState extends State<_TestWidget> {
   String _output = '';
 
   @override
@@ -71,6 +182,49 @@ class _MyAppState extends State<MyApp> {
       } on LuaException catch (e) {
         buffer.writeln('   Caught error: ${e.message}\n');
       }
+
+      state['table'] = {
+        'k1': 'v1',
+        'k2': 123,
+        'k3': {'k4': 1, 'k5': null},
+      };
+      state.doString('print(table)');
+      state.doString('''
+        function dump(o)
+          if type(o) == 'table' then
+              local s = '{ '
+              for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+              end
+              return s .. ' }'
+          else
+              return tostring(o)
+          end
+        end
+        s = dump(table)
+      ''');
+
+      buffer.writeln('   dump(table) = ${state['s']}\n');
+
+      state['list'] = [
+        1,
+        2,
+        3,
+        {'k': 'value'},
+        'text',
+      ];
+      state.doString('print(list)');
+      state.doString('s = dump(list)');
+      buffer.writeln('   dump(list) = ${state['s']}\n');
+
+      state['table'] = {
+        'k1': 'v1',
+        2: 123,
+        'k3': {'k4': 1, 'k5': null},
+      };
+      state.doString('s = dump(table)');
+      buffer.writeln('   dump(table) = ${state['s']}\n');
     } finally {
       state.close();
     }
@@ -82,39 +236,25 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Flua Demo')),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 16.0,
-            children: [
-              ElevatedButton(
-                onPressed: _runDemo,
-                child: const Text('Run Demo'),
-              ),
-              if (_output.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: SelectableText(
-                    _output,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 16.0,
+      children: [
+        ElevatedButton(onPressed: _runDemo, child: const Text('Run Demo')),
+        if (_output.isNotEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SelectableText(
+              _output,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+            ),
           ),
-        ),
-      ),
+      ],
     );
   }
 }
