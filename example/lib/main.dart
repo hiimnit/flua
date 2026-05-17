@@ -87,7 +87,7 @@ class __ReplWidgetState extends State<_ReplWidget> {
             try {
               output.add(value);
 
-              final pretop = state.top();
+              final pretop = state.top;
               state.doString(value);
 
               final results = state.popResults(pretop);
@@ -95,6 +95,18 @@ class __ReplWidgetState extends State<_ReplWidget> {
                   ? '> '
                   : '> ${results.map((e) => e.toString()).join(', ')}';
               output.add(printedResult);
+
+              for (final result in results) {
+                if (result is! LuaFunction) {
+                  continue;
+                }
+
+                final results = result.call();
+                final printedResult = results.isEmpty
+                    ? '>> '
+                    : '>> ${results.map((e) => e.toString()).join(', ')}';
+                output.add(printedResult);
+              }
             } catch (e) {
               output.add('ERROR: $e');
             }
