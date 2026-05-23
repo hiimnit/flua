@@ -193,10 +193,11 @@ class LuaState implements Finalizable {
       if (prepareResult != 0) {
         throw LuaException('$funcName is not a function.');
       }
+
       for (final arg in args) {
         _pushValue(arg);
-        // TODO: luaL_checkstack lua_checkstack
       }
+
       final status = bindings.flua_pcall(_state, args.length);
       if (status != 0) {
         final errorPtr = bindings.flua_error(_state);
@@ -229,10 +230,11 @@ class LuaState implements Finalizable {
     if (_types[type] != LuaType.function) {
       throw LuaException('$func is not a function.');
     }
+
     for (final arg in args) {
       _pushValue(arg);
-      // TODO: luaL_checkstack lua_checkstack
     }
+
     final status = bindings.flua_pcall(_state, args.length);
     if (status != 0) {
       final errorPtr = bindings.flua_error(_state);
@@ -353,6 +355,74 @@ class LuaState implements Finalizable {
         // TODO: LuaUnknown?
         throw LuaException('Unknown lua type.');
     }
+  }
+
+  double checkNumber(int arg) {
+    _checkValid();
+    return bindings.flua_check_number(_state, arg);
+  }
+
+  double optNumber(int arg, double defaultValue) {
+    _checkValid();
+    return bindings.flua_opt_number(_state, arg, defaultValue);
+  }
+
+  int checkInteger(int arg) {
+    _checkValid();
+    return bindings.flua_check_integer(_state, arg);
+  }
+
+  int optInteger(int arg, int defaultValue) {
+    _checkValid();
+    return bindings.flua_opt_integer(_state, arg, defaultValue);
+  }
+
+  String checkString(int arg) {
+    _checkValid();
+    final ptr = bindings.flua_check_string(_state, arg);
+    return ptr.cast<Utf8>().toDartString();
+  }
+
+  String optString(int arg, String defaultValue) {
+    _checkValid();
+    final nativeDef = defaultValue.toNativeUtf8();
+    try {
+      final ptr = bindings.flua_opt_string(_state, arg, nativeDef.cast());
+      return ptr.cast<Utf8>().toDartString();
+    } finally {
+      malloc.free(nativeDef);
+    }
+  }
+
+  void checkStack(int extraSlots, String message) {
+    _checkValid();
+    final nativeMsg = message.toNativeUtf8();
+    try {
+      bindings.flua_check_stack(_state, extraSlots, nativeMsg.cast());
+    } finally {
+      malloc.free(nativeMsg);
+    }
+  }
+
+  void checkType(int arg, LuaType type) {
+    _checkValid();
+    final t = _types.entries
+        .firstWhere(
+          (e) => e.value == type,
+          orElse: () => throw LuaException('Unknown LuaType: $type'),
+        )
+        .key;
+    bindings.flua_check_type(_state, arg, t);
+  }
+
+  void checkAny(int arg) {
+    _checkValid();
+    bindings.flua_check_any(_state, arg);
+  }
+
+  bool isNoneOrNil(int arg) {
+    _checkValid();
+    return bindings.flua_is_none_or_nil(_state, arg) != 0;
   }
 
   Map<Object?, Object?> _traverseTable(int idx) {

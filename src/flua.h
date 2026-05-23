@@ -56,6 +56,17 @@ FFI_PLUGIN_EXPORT double flua_to_number(flua_State state, int index);
 FFI_PLUGIN_EXPORT const char* flua_to_string(flua_State state, int index);
 FFI_PLUGIN_EXPORT int flua_to_boolean(flua_State state, int index);
 
+FFI_PLUGIN_EXPORT double flua_check_number(flua_State state, int arg);
+FFI_PLUGIN_EXPORT double flua_opt_number(flua_State state, int arg, double def);
+FFI_PLUGIN_EXPORT int64_t flua_check_integer(flua_State state, int arg);
+FFI_PLUGIN_EXPORT int64_t flua_opt_integer(flua_State state, int arg, int64_t def);
+FFI_PLUGIN_EXPORT const char* flua_check_string(flua_State state, int arg);
+FFI_PLUGIN_EXPORT const char* flua_opt_string(flua_State state, int arg, const char* def);
+FFI_PLUGIN_EXPORT void flua_check_stack(flua_State state, int sz, const char* msg);
+FFI_PLUGIN_EXPORT void flua_check_type(flua_State state, int arg, int t);
+FFI_PLUGIN_EXPORT void flua_check_any(flua_State state, int arg);
+FFI_PLUGIN_EXPORT int flua_is_none_or_nil(flua_State state, int arg);
+
 FFI_PLUGIN_EXPORT const char* flua_error(flua_State state);
 FFI_PLUGIN_EXPORT int flua_gettop(flua_State state);
 FFI_PLUGIN_EXPORT void flua_pop(flua_State state, int n);

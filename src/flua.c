@@ -252,6 +252,56 @@ FFI_PLUGIN_EXPORT int flua_to_boolean(flua_State state, int idx) {
   return value;
 }
 
+FFI_PLUGIN_EXPORT double flua_check_number(flua_State state, int arg) {
+  lua_State* L = (lua_State*)state;
+  return (double)luaL_checknumber(L, arg);
+}
+
+FFI_PLUGIN_EXPORT double flua_opt_number(flua_State state, int arg, double def) {
+  lua_State* L = (lua_State*)state;
+  return (double)luaL_optnumber(L, arg, (lua_Number)def);
+}
+
+FFI_PLUGIN_EXPORT int64_t flua_check_integer(flua_State state, int arg) {
+  lua_State* L = (lua_State*)state;
+  return (int64_t)luaL_checkinteger(L, arg);
+}
+
+FFI_PLUGIN_EXPORT int64_t flua_opt_integer(flua_State state, int arg, int64_t def) {
+  lua_State* L = (lua_State*)state;
+  return (int64_t)luaL_optinteger(L, arg, (lua_Integer)def);
+}
+
+FFI_PLUGIN_EXPORT const char* flua_check_string(flua_State state, int arg) {
+  lua_State* L = (lua_State*)state;
+  return luaL_checklstring(L, arg, NULL);
+}
+
+FFI_PLUGIN_EXPORT const char* flua_opt_string(flua_State state, int arg, const char* def) {
+  lua_State* L = (lua_State*)state;
+  return luaL_optlstring(L, arg, def, NULL);
+}
+
+FFI_PLUGIN_EXPORT void flua_check_stack(flua_State state, int sz, const char* msg) {
+  lua_State* L = (lua_State*)state;
+  luaL_checkstack(L, sz, msg);
+}
+
+FFI_PLUGIN_EXPORT void flua_check_type(flua_State state, int arg, int t) {
+  lua_State* L = (lua_State*)state;
+  luaL_checktype(L, arg, t);
+}
+
+FFI_PLUGIN_EXPORT void flua_check_any(flua_State state, int arg) {
+  lua_State* L = (lua_State*)state;
+  luaL_checkany(L, arg);
+}
+
+FFI_PLUGIN_EXPORT int flua_is_none_or_nil(flua_State state, int arg) {
+  lua_State* L = (lua_State*)state;
+  return lua_isnoneornil(L, arg);
+}
+
 FFI_PLUGIN_EXPORT const char* flua_error(flua_State state) {
   lua_State* L = (lua_State*)state;
   if (lua_gettop(L) > 0) {

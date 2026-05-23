@@ -153,6 +153,46 @@ external ffi.Pointer<ffi.Char> flua_to_string(flua_State state, int index);
 @ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
 external int flua_to_boolean(flua_State state, int index);
 
+@ffi.Native<ffi.Double Function(flua_State, ffi.Int)>()
+external double flua_check_number(flua_State state, int arg);
+
+@ffi.Native<ffi.Double Function(flua_State, ffi.Int, ffi.Double)>()
+external double flua_opt_number(flua_State state, int arg, double def);
+
+@ffi.Native<ffi.Int64 Function(flua_State, ffi.Int)>()
+external int flua_check_integer(flua_State state, int arg);
+
+@ffi.Native<ffi.Int64 Function(flua_State, ffi.Int, ffi.Int64)>()
+external int flua_opt_integer(flua_State state, int arg, int def);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State, ffi.Int)>()
+external ffi.Pointer<ffi.Char> flua_check_string(flua_State state, int arg);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(flua_State, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> flua_opt_string(
+  flua_State state,
+  int arg,
+  ffi.Pointer<ffi.Char> def,
+);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Pointer<ffi.Char>)>()
+external void flua_check_stack(
+  flua_State state,
+  int sz,
+  ffi.Pointer<ffi.Char> msg,
+);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int)>()
+external void flua_check_type(flua_State state, int arg, int t);
+
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
+external void flua_check_any(flua_State state, int arg);
+
+@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
+external int flua_is_none_or_nil(flua_State state, int arg);
+
 @ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State)>()
 external ffi.Pointer<ffi.Char> flua_error(flua_State state);
 
