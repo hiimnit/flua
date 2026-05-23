@@ -30,6 +30,7 @@ enum LuaType {
 class LuaState implements Finalizable {
   final bindings.flua_State _state;
   bool _closed = false;
+  // TODO: is hashing worth it?
   final Map<int, LuaType> _types = {};
 
   static final _finalizer = NativeFinalizer(
@@ -180,6 +181,7 @@ class LuaState implements Finalizable {
 
   List<Object?> call(String funcName, [List<Object?> args = const []]) {
     _checkValid();
+
     final nativeName = funcName.toNativeUtf8();
     try {
       final pretop = bindings.flua_gettop(_state);
@@ -244,7 +246,27 @@ class LuaState implements Finalizable {
   }
 
   void _unref(int ref) {
+    _checkValid();
+
     bindings.flua_unref(_state, bindings.FLUA_REGISTRYINDEX, ref);
+  }
+
+  void pushFunction(
+    Pointer<NativeFunction<bindings.flua_CFunctionFunction>> fp,
+  ) {
+    bindings.flua_push_c_function(_state, fp);
+    final nativeName = 'dartprint'.toNativeUtf8();
+    bindings.flua_set_global(_state, nativeName.cast());
+    malloc.free(nativeName);
+  }
+
+  void setGlobal(String name) {
+    final nativeName = 'dartprint'.toNativeUtf8();
+    try {
+      bindings.flua_set_global(_state, nativeName.cast());
+    } finally {
+      malloc.free(nativeName);
+    }
   }
 
   void _pushValue(Object? value) {
@@ -277,6 +299,8 @@ class LuaState implements Finalizable {
   }
 
   List<Object?> popResults(int pretop) {
+    _checkValid();
+
     final count = bindings.flua_gettop(_state) - pretop;
     final results = <Object?>[];
     for (int i = 0; i < count; ++i) {
@@ -285,15 +309,22 @@ class LuaState implements Finalizable {
       results.add(getValue(stackIndex));
     }
 
-    bindings.flua_set_top(_state, pretop);
+    bindings.flua_set_top(_state, pretop); // TODO: is this the way?
 
     return results;
   }
 
-  Object? getValue(int idx) {
-    final type = bindings.flua_type(_state, idx);
+  LuaType type(int idx) {
+    _checkValid();
 
-    switch (_types[type] ?? LuaType.unknown) {
+    final type = bindings.flua_type(_state, idx);
+    return _types[type] ?? LuaType.unknown;
+  }
+
+  Object? getValue(int idx) {
+    _checkValid();
+
+    switch (type(idx)) {
       case LuaType.none: // TODO: different handling for none?
       case LuaType.nil:
         return null;
@@ -305,13 +336,12 @@ class LuaState implements Finalizable {
         final ptr = bindings.flua_to_string(_state, idx);
         return ptr.address != 0 ? ptr.cast<Utf8>().toDartString() : null;
       case LuaType.table:
-        return traverseTable(idx);
+        return _traverseTable(idx);
       case LuaType.function:
-        // FIXME: flua_ref pops the value, pop then crashes the app
+        // copy the value to the top of the stack
+        bindings.flua_push_value(_state, idx);
+        // create a reference in registry
         final ref = bindings.flua_ref(_state, bindings.FLUA_REGISTRYINDEX);
-        // TODO: "fix"
-        // TODO: what if function is a key in table, this will probably break traversing with lua_next?
-        bindings.flua_raw_get_i(_state, bindings.FLUA_REGISTRYINDEX, ref);
         return LuaFunction(ref, this);
       case LuaType.lightuserdata:
         return const LuaLightUserData();
@@ -321,16 +351,16 @@ class LuaState implements Finalizable {
         return const LuaThread();
       case LuaType.unknown:
         // TODO: LuaUnknown?
-        throw LuaException('Unknown lua type $type.');
+        throw LuaException('Unknown lua type.');
     }
   }
 
-  Map<Object?, Object?> traverseTable(int idx) {
+  Map<Object?, Object?> _traverseTable(int idx) {
     final result = {};
     // TODO: checkstack
 
     bindings.flua_push_nil(_state);
-    // TODO: assumes negative idx
+    // TODO: assumes negative idx // TODO: so convert to abs idx?
     while (bindings.flua_next(_state, idx - 1) != 0) {
       result[getValue(-2)] = getValue(-1);
 
@@ -341,9 +371,11 @@ class LuaState implements Finalizable {
     return result;
   }
 
+  // TODO: _checkValid();
   int get top => bindings.flua_gettop(_state);
 }
 
+// TODO: ref counting => auto unref?
 class LuaFunction {
   final int ref;
   final LuaState _state;

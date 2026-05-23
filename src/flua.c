@@ -99,6 +99,17 @@ FFI_PLUGIN_EXPORT void flua_push_nil(flua_State state) {
   lua_pushnil(L);
 }
 
+FFI_PLUGIN_EXPORT void flua_push_value(flua_State state, int idx) {
+  lua_State* L = (lua_State*)state;
+  lua_pushvalue(L, idx);
+}
+
+FFI_PLUGIN_EXPORT void flua_push_c_function(flua_State state, flua_CFunction fn) {
+  lua_State* L = (lua_State*)state;
+  lua_CFunction f = (lua_CFunction)fn;
+  lua_pushcfunction(L, f);
+}
+
 FFI_PLUGIN_EXPORT void flua_new_table(flua_State state) {
   lua_State* L = (lua_State*)state;
   lua_newtable(L);
@@ -161,7 +172,7 @@ FFI_PLUGIN_EXPORT double flua_get_global_double(flua_State state, const char* na
 FFI_PLUGIN_EXPORT const char* flua_get_global_string(flua_State state, const char* name) {
   lua_State* L = (lua_State*)state;
   lua_getglobal(L, name);
-  char* string = lua_tostring(L, -1);
+  const char* string = lua_tostring(L, -1);
   lua_pop(L, 1);
   return string;
 }

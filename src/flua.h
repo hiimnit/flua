@@ -7,6 +7,7 @@
 #endif
 
 typedef void* flua_State;
+typedef int (*flua_CFunction) (flua_State L);
 
 FFI_PLUGIN_EXPORT flua_State flua_create(void);
 FFI_PLUGIN_EXPORT void flua_close(flua_State state);
@@ -25,6 +26,8 @@ FFI_PLUGIN_EXPORT void flua_push_double(flua_State state, double value);
 FFI_PLUGIN_EXPORT void flua_push_string(flua_State state, const char* value);
 FFI_PLUGIN_EXPORT void flua_push_bool(flua_State state, int value);
 FFI_PLUGIN_EXPORT void flua_push_nil(flua_State state);
+FFI_PLUGIN_EXPORT void flua_push_value(flua_State state, int idx);
+FFI_PLUGIN_EXPORT void flua_push_c_function(flua_State state, flua_CFunction fn);
 FFI_PLUGIN_EXPORT void flua_new_table(flua_State state);
 FFI_PLUGIN_EXPORT void flua_create_table(flua_State state, int narray, int nrec);
 FFI_PLUGIN_EXPORT void flua_set_field(flua_State state, int idx, const char* name);

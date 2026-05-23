@@ -2,6 +2,10 @@
 
 Embed Lua 5.4 in Flutter applications via Dart FFI. Execute Lua code, exchange data, and call Lua functions from Dart with a clean, high-level API.
 
+## TODO
+
+- Upgrade to 5.5?
+
 ## Features
 
 - Execute Lua code strings and files
@@ -72,7 +76,7 @@ try {
 The following Dart types can be passed to and from Lua:
 
 | Dart Type | Lua Type |
-|-----------|----------|
+| --------- | -------- |
 | `null` | `nil` |
 | `bool` | `boolean` |
 | `int` / `double` | `number` |
@@ -95,16 +99,6 @@ To regenerate FFI bindings after modifying `src/flua.h`:
 ```bash
 dart run ffigen --config ffigen.yaml
 ```
-
-## Platform Support
-
-| Platform | Status |
-|----------|--------|
-| Android  | Supported |
-| iOS      | Supported |
-| macOS    | Supported |
-| Linux    | Supported |
-| Windows  | Supported |
 
 ## Lua Version
 

@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -237,6 +239,14 @@ class _TestWidgetState extends State<_TestWidget> {
       };
       state.doString('s = dump(table)');
       buffer.writeln('   dump(table) = ${state['s']}\n');
+
+      final fp = Pointer.fromFunction<Int Function(Pointer<Void>)>(
+        dartPrint,
+        0,
+      );
+      state.pushFunction(fp);
+      state.doString('dartprint(1)');
+      buffer.writeln('dartprint(1)');
     } finally {
       state.close();
     }
@@ -244,6 +254,11 @@ class _TestWidgetState extends State<_TestWidget> {
     setState(() {
       _output = buffer.toString();
     });
+  }
+
+  static int dartPrint(Pointer<Void> state) {
+    print('> print from dart, ');
+    return 0;
   }
 
   @override

@@ -64,6 +64,12 @@ external void flua_push_bool(flua_State state, int value);
 @ffi.Native<ffi.Void Function(flua_State)>()
 external void flua_push_nil(flua_State state);
 
+@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
+external void flua_push_value(flua_State state, int idx);
+
+@ffi.Native<ffi.Void Function(flua_State, flua_CFunction)>()
+external void flua_push_c_function(flua_State state, flua_CFunction fn);
+
 @ffi.Native<ffi.Void Function(flua_State)>()
 external void flua_new_table(flua_State state);
 
@@ -205,3 +211,7 @@ external int FLUA_TTHREAD;
 external int FLUA_REGISTRYINDEX;
 
 typedef flua_State = ffi.Pointer<ffi.Void>;
+typedef flua_CFunctionFunction = ffi.Int Function(flua_State L);
+typedef Dartflua_CFunctionFunction = int Function(flua_State L);
+typedef flua_CFunction =
+    ffi.Pointer<ffi.NativeFunction<flua_CFunctionFunction>>;
