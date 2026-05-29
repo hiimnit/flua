@@ -13,6 +13,9 @@ external void flua_close(flua_State state);
 @ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
 external int flua_do_string(flua_State state, ffi.Pointer<ffi.Char> code);
 
+@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
+external int flua_abs_index(flua_State state, int idx);
+
 @ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>)>()
 external void flua_set_global(flua_State state, ffi.Pointer<ffi.Char> name);
 
@@ -95,7 +98,6 @@ external void flua_set_i(flua_State state, int idx, int n);
 @ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int64)>()
 external void flua_raw_set_i(flua_State state, int idx, int n);
 
-/// TODO: flua_push_function - generic c function that calls dart?
 @ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
 external int flua_get_global_type(flua_State state, ffi.Pointer<ffi.Char> name);
 
@@ -193,6 +195,9 @@ external void flua_check_any(flua_State state, int arg);
 @ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
 external int flua_is_none_or_nil(flua_State state, int arg);
 
+@ffi.Native<ffi.Int Function()>()
+external int flua_lua_registryindex();
+
 @ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State)>()
 external ffi.Pointer<ffi.Char> flua_error(flua_State state);
 
@@ -216,39 +221,6 @@ external int flua_ref(flua_State state, int idx);
 
 @ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int)>()
 external void flua_unref(flua_State state, int idx, int ref);
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TNONE;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TNIL;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TBOOLEAN;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TLIGHTUSERDATA;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TNUMBER;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TSTRING;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TTABLE;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TFUNCTION;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TUSERDATA;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_TTHREAD;
-
-@ffi.Native<ffi.Int>()
-external int FLUA_REGISTRYINDEX;
 
 typedef flua_State = ffi.Pointer<ffi.Void>;
 typedef flua_CFunctionFunction = ffi.Int Function(flua_State L);

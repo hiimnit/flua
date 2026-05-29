@@ -14,6 +14,8 @@ FFI_PLUGIN_EXPORT void flua_close(flua_State state);
 
 FFI_PLUGIN_EXPORT int flua_do_string(flua_State state, const char* code);
 
+FFI_PLUGIN_EXPORT int flua_abs_index(flua_State state, int idx);
+
 FFI_PLUGIN_EXPORT void flua_set_global(flua_State state, const char* name);
 FFI_PLUGIN_EXPORT void flua_set_global_int(flua_State state, const char* name, int64_t value);
 FFI_PLUGIN_EXPORT void flua_set_global_double(flua_State state, const char* name, double value);
@@ -35,7 +37,6 @@ FFI_PLUGIN_EXPORT void flua_set_table(flua_State state, int idx);
 FFI_PLUGIN_EXPORT void flua_raw_set(flua_State state, int idx);
 FFI_PLUGIN_EXPORT void flua_set_i(flua_State state, int idx, int64_t n);
 FFI_PLUGIN_EXPORT void flua_raw_set_i(flua_State state, int idx, int64_t n);
-// TODO: flua_push_function - generic c function that calls dart?
 
 FFI_PLUGIN_EXPORT int flua_get_global_type(flua_State state, const char* name);
 FFI_PLUGIN_EXPORT int64_t flua_get_global_int(flua_State state, const char* name);
@@ -66,6 +67,7 @@ FFI_PLUGIN_EXPORT void flua_check_stack(flua_State state, int sz, const char* ms
 FFI_PLUGIN_EXPORT void flua_check_type(flua_State state, int arg, int t);
 FFI_PLUGIN_EXPORT void flua_check_any(flua_State state, int arg);
 FFI_PLUGIN_EXPORT int flua_is_none_or_nil(flua_State state, int arg);
+FFI_PLUGIN_EXPORT int flua_lua_registryindex(void);
 
 FFI_PLUGIN_EXPORT const char* flua_error(flua_State state);
 FFI_PLUGIN_EXPORT int flua_gettop(flua_State state);
@@ -75,16 +77,3 @@ FFI_PLUGIN_EXPORT int flua_type(flua_State state, int idx);
 FFI_PLUGIN_EXPORT int flua_next(flua_State state, int idx);
 FFI_PLUGIN_EXPORT int flua_ref(flua_State state, int idx);
 FFI_PLUGIN_EXPORT void flua_unref(flua_State state, int idx, int ref);
-
-int FLUA_TNONE;
-int FLUA_TNIL;
-int FLUA_TBOOLEAN;
-int FLUA_TLIGHTUSERDATA;
-int FLUA_TNUMBER;
-int FLUA_TSTRING;
-int FLUA_TTABLE;
-int FLUA_TFUNCTION;
-int FLUA_TUSERDATA;
-int FLUA_TTHREAD;
-
-int FLUA_REGISTRYINDEX;

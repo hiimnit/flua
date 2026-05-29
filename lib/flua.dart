@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'flua_bindings_generated.dart' as bindings;
+export 'flua_bindings_generated.dart' show flua_CFunctionFunction;
 
 class LuaException implements Exception {
   final String message;
@@ -13,30 +14,42 @@ class LuaException implements Exception {
 }
 
 enum LuaType {
-  none,
-  nil,
-  boolean,
-  lightuserdata,
-  number,
-  string,
-  table,
-  function,
-  userdata,
-  thread,
+  none(-1),
+  nil(0),
+  boolean(1),
+  lightuserdata(2),
+  number(3),
+  string(4),
+  table(5),
+  function(6),
+  userdata(7),
+  thread(8);
 
-  unknown,
+  final int value;
+
+  const LuaType(this.value);
+
+  static LuaType? from(int input) {
+    for (final type in LuaType.values) {
+      if (type.value == input) {
+        return type;
+      }
+    }
+    return null;
+  }
 }
+
+const kLuaRegistryIndex = -1001000;
 
 class LuaState implements Finalizable {
   final bindings.flua_State _state;
   bool _closed = false;
-  // TODO: is hashing worth it?
-  final Map<int, LuaType> _types = {};
 
   static final _finalizer = NativeFinalizer(
     Native.addressOf(bindings.flua_close),
   );
 
+  // TODO: is this called everywhere it should be?
   void _checkValid() {
     if (_closed) {
       throw LuaException('Lua state has been closed');
@@ -47,18 +60,6 @@ class LuaState implements Finalizable {
     if (_state.address == 0) {
       throw LuaException('Failed to create Lua state');
     }
-    _types.addAll({
-      bindings.FLUA_TNONE: LuaType.none,
-      bindings.FLUA_TNIL: LuaType.nil,
-      bindings.FLUA_TBOOLEAN: LuaType.boolean,
-      bindings.FLUA_TLIGHTUSERDATA: LuaType.lightuserdata,
-      bindings.FLUA_TNUMBER: LuaType.number,
-      bindings.FLUA_TSTRING: LuaType.string,
-      bindings.FLUA_TTABLE: LuaType.table,
-      bindings.FLUA_TFUNCTION: LuaType.function,
-      bindings.FLUA_TUSERDATA: LuaType.userdata,
-      bindings.FLUA_TTHREAD: LuaType.thread,
-    });
     _finalizer.attach(this, _state, detach: this);
   }
 
@@ -90,46 +91,30 @@ class LuaState implements Finalizable {
     }
   }
 
-  LuaType typeOf(String name) {
+  LuaType? typeOf(String name) {
     _checkValid();
     final nativeName = name.toNativeUtf8();
     try {
-      return _types[bindings.flua_get_global_type(_state, nativeName.cast())] ??
-          LuaType.unknown;
+      final type = bindings.flua_get_global_type(_state, nativeName.cast());
+      return LuaType.from(type);
     } finally {
       malloc.free(nativeName);
     }
+  }
+
+  LuaType? typeAt(int idx) {
+    _checkValid();
+
+    final type = bindings.flua_type(_state, idx);
+    return LuaType.from(type);
   }
 
   Object? operator [](String name) {
     _checkValid();
     final nativeName = name.toNativeUtf8();
     try {
-      final type =
-          _types[bindings.flua_get_global_type(_state, nativeName.cast())] ??
-          LuaType.unknown; // TODO: getting type and then value? not at once?
-      // TODO: wrap the returned value?
-      switch (type) {
-        case LuaType.nil:
-          return null;
-        case LuaType.boolean:
-          return bindings.flua_get_global_bool(_state, nativeName.cast()) != 0;
-        case LuaType.number:
-          return bindings.flua_get_global_double(_state, nativeName.cast());
-        case LuaType.string:
-          final ptr = bindings.flua_get_global_string(
-            _state,
-            nativeName.cast(),
-          );
-          return ptr.address != 0 ? ptr.cast<Utf8>().toDartString() : null;
-        case LuaType.function:
-          throw UnimplementedError();
-        case LuaType.table:
-          throw UnimplementedError();
-        default:
-          // TODO: ???
-          return null;
-      }
+      final type = bindings.flua_get_global(_state, nativeName.cast());
+      return _getValueOfType(-1, LuaType.from(type));
     } finally {
       malloc.free(nativeName);
     }
@@ -221,13 +206,9 @@ class LuaState implements Finalizable {
 
     final pretop = bindings.flua_gettop(_state);
 
-    final type = bindings.flua_raw_get_i(
-      _state,
-      bindings.FLUA_REGISTRYINDEX,
-      func.ref,
-    );
+    final type = bindings.flua_raw_get_i(_state, kLuaRegistryIndex, func.ref);
 
-    if (_types[type] != LuaType.function) {
+    if (LuaType.from(type) != LuaType.function) {
       throw LuaException('$func is not a function.');
     }
 
@@ -250,20 +231,17 @@ class LuaState implements Finalizable {
   void _unref(int ref) {
     _checkValid();
 
-    bindings.flua_unref(_state, bindings.FLUA_REGISTRYINDEX, ref);
+    bindings.flua_unref(_state, kLuaRegistryIndex, ref);
   }
 
   void pushFunction(
     Pointer<NativeFunction<bindings.flua_CFunctionFunction>> fp,
   ) {
     bindings.flua_push_c_function(_state, fp);
-    final nativeName = 'dartprint'.toNativeUtf8();
-    bindings.flua_set_global(_state, nativeName.cast());
-    malloc.free(nativeName);
   }
 
   void setGlobal(String name) {
-    final nativeName = 'dartprint'.toNativeUtf8();
+    final nativeName = name.toNativeUtf8();
     try {
       bindings.flua_set_global(_state, nativeName.cast());
     } finally {
@@ -308,7 +286,7 @@ class LuaState implements Finalizable {
     for (int i = 0; i < count; ++i) {
       final stackIndex = -(count - i);
 
-      results.add(getValue(stackIndex));
+      results.add(getValueAt(stackIndex));
     }
 
     bindings.flua_set_top(_state, pretop); // TODO: is this the way?
@@ -316,17 +294,15 @@ class LuaState implements Finalizable {
     return results;
   }
 
-  LuaType type(int idx) {
+  Object? getValueAt(int idx) {
     _checkValid();
 
-    final type = bindings.flua_type(_state, idx);
-    return _types[type] ?? LuaType.unknown;
+    final type = typeAt(idx);
+    return _getValueOfType(idx, type);
   }
 
-  Object? getValue(int idx) {
-    _checkValid();
-
-    switch (type(idx)) {
+  Object? _getValueOfType(int idx, LuaType? type) {
+    switch (type) {
       case LuaType.none: // TODO: different handling for none?
       case LuaType.nil:
         return null;
@@ -343,7 +319,7 @@ class LuaState implements Finalizable {
         // copy the value to the top of the stack
         bindings.flua_push_value(_state, idx);
         // create a reference in registry
-        final ref = bindings.flua_ref(_state, bindings.FLUA_REGISTRYINDEX);
+        final ref = bindings.flua_ref(_state, kLuaRegistryIndex);
         return LuaFunction(ref, this);
       case LuaType.lightuserdata:
         return const LuaLightUserData();
@@ -351,7 +327,7 @@ class LuaState implements Finalizable {
         return const LuaUserData();
       case LuaType.thread:
         return const LuaThread();
-      case LuaType.unknown:
+      default:
         // TODO: LuaUnknown?
         throw LuaException('Unknown lua type.');
     }
@@ -406,13 +382,7 @@ class LuaState implements Finalizable {
 
   void checkType(int arg, LuaType type) {
     _checkValid();
-    final t = _types.entries
-        .firstWhere(
-          (e) => e.value == type,
-          orElse: () => throw LuaException('Unknown LuaType: $type'),
-        )
-        .key;
-    bindings.flua_check_type(_state, arg, t);
+    bindings.flua_check_type(_state, arg, type.value);
   }
 
   void checkAny(int arg) {
@@ -426,13 +396,14 @@ class LuaState implements Finalizable {
   }
 
   Map<Object?, Object?> _traverseTable(int idx) {
+    idx = bindings.flua_abs_index(_state, idx);
+
     final result = {};
     // TODO: checkstack
 
     bindings.flua_push_nil(_state);
-    // TODO: assumes negative idx // TODO: so convert to abs idx?
-    while (bindings.flua_next(_state, idx - 1) != 0) {
-      result[getValue(-2)] = getValue(-1);
+    while (bindings.flua_next(_state, idx) != 0) {
+      result[getValueAt(-2)] = getValueAt(-1);
 
       // pop value, keep key on stack for flua_next
       bindings.flua_pop(_state, 1);

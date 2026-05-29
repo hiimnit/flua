@@ -8,18 +8,6 @@
 // TODO: no pop no lua_settop?
 
 FFI_PLUGIN_EXPORT flua_State flua_create(void) {
-  FLUA_TNONE = LUA_TNONE;
-  FLUA_TNIL = LUA_TNIL;
-  FLUA_TBOOLEAN = LUA_TBOOLEAN;
-  FLUA_TLIGHTUSERDATA = LUA_TLIGHTUSERDATA;
-  FLUA_TNUMBER = LUA_TNUMBER;
-  FLUA_TSTRING = LUA_TSTRING;
-  FLUA_TTABLE = LUA_TTABLE;
-  FLUA_TFUNCTION = LUA_TFUNCTION;
-  FLUA_TUSERDATA = LUA_TUSERDATA;
-  FLUA_TTHREAD = LUA_TTHREAD;
-  FLUA_REGISTRYINDEX = LUA_REGISTRYINDEX;
-
   lua_State* L = luaL_newstate();
   if (L) {
     luaL_openlibs(L);
@@ -37,6 +25,11 @@ FFI_PLUGIN_EXPORT void flua_close(flua_State state) {
 FFI_PLUGIN_EXPORT int flua_do_string(flua_State state, const char* code) {
   lua_State* L = (lua_State*)state;
   return luaL_dostring(L, code);
+}
+
+FFI_PLUGIN_EXPORT int flua_abs_index(flua_State state, int idx) {
+  lua_State* L = (lua_State*)state;
+  return lua_absindex(L, idx);
 }
 
 FFI_PLUGIN_EXPORT void flua_set_global(flua_State state, const char* name) {
@@ -300,6 +293,10 @@ FFI_PLUGIN_EXPORT void flua_check_any(flua_State state, int arg) {
 FFI_PLUGIN_EXPORT int flua_is_none_or_nil(flua_State state, int arg) {
   lua_State* L = (lua_State*)state;
   return lua_isnoneornil(L, arg);
+}
+
+FFI_PLUGIN_EXPORT int flua_lua_registryindex(void) {
+  return LUA_REGISTRYINDEX;
 }
 
 FFI_PLUGIN_EXPORT const char* flua_error(flua_State state) {

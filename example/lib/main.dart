@@ -240,11 +240,8 @@ class _TestWidgetState extends State<_TestWidget> {
       state.doString('s = dump(table)');
       buffer.writeln('   dump(table) = ${state['s']}\n');
 
-      final fp = Pointer.fromFunction<Int Function(Pointer<Void>)>(
-        dartPrint,
-        0,
-      );
-      state.pushFunction(fp);
+      state.pushFunction(_dartPrintPointer);
+      state.setGlobal('dartprint');
       state.doString('dartprint(1)');
       buffer.writeln('dartprint(1)');
     } finally {
@@ -260,6 +257,9 @@ class _TestWidgetState extends State<_TestWidget> {
     print('> print from dart, ');
     return 0;
   }
+
+  static final _dartPrintPointer =
+      Pointer.fromFunction<Int Function(Pointer<Void>)>(dartPrint, 0);
 
   @override
   Widget build(BuildContext context) {
