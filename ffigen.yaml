@@ -4,12 +4,18 @@ description: |
   Bindings for `src/flua.h`.
 
   Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
-output: 'lib/flua_bindings_generated.dart'
+output: "lib/flua_bindings_generated.dart"
 headers:
   entry-points:
-    - 'src/flua.h'
+    - "src/flua.h"
   include-directives:
-    - 'src/flua.h'
+    - "src/flua.h"
+functions:
+  rename:
+    "flua_(.*)": "$1"
+typedefs:
+  rename:
+    "flua_(.*)": "$1"
 ffi-native:
 comments:
   style: any

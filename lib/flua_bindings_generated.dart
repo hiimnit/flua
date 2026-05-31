@@ -4,226 +4,221 @@
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
-@ffi.Native<flua_State Function()>()
-external flua_State flua_create();
+@ffi.Native<State Function()>(symbol: 'flua_create')
+external State create();
 
-@ffi.Native<ffi.Void Function(flua_State)>()
-external void flua_close(flua_State state);
+@ffi.Native<ffi.Void Function(State)>(symbol: 'flua_close')
+external void close(State state);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external int flua_do_string(flua_State state, ffi.Pointer<ffi.Char> code);
+@ffi.Native<ffi.Int Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_dostring',
+)
+external int dostring(State state, ffi.Pointer<ffi.Char> code);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_abs_index(flua_State state, int idx);
+@ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_setglobal',
+)
+external void setglobal(State state, ffi.Pointer<ffi.Char> name);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external void flua_set_global(flua_State state, ffi.Pointer<ffi.Char> name);
+@ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>, ffi.Int64)>(
+  symbol: 'flua_setglobalint',
+)
+external void setglobalint(State state, ffi.Pointer<ffi.Char> name, int value);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>, ffi.Int64)>()
-external void flua_set_global_int(
-  flua_State state,
-  ffi.Pointer<ffi.Char> name,
-  int value,
-);
-
-@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>, ffi.Double)>()
-external void flua_set_global_double(
-  flua_State state,
+@ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>, ffi.Double)>(
+  symbol: 'flua_setglobaldouble',
+)
+external void setglobaldouble(
+  State state,
   ffi.Pointer<ffi.Char> name,
   double value,
 );
 
 @ffi.Native<
-  ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
->()
-external void flua_set_global_string(
-  flua_State state,
+  ffi.Void Function(State, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+>(symbol: 'flua_setglobalstring')
+external void setglobalstring(
+  State state,
   ffi.Pointer<ffi.Char> name,
   ffi.Pointer<ffi.Char> value,
 );
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>, ffi.Int)>()
-external void flua_set_global_bool(
-  flua_State state,
-  ffi.Pointer<ffi.Char> name,
-  int value,
-);
+@ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>, ffi.Int)>(
+  symbol: 'flua_setglobalbool',
+)
+external void setglobalbool(State state, ffi.Pointer<ffi.Char> name, int value);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external void flua_set_global_nil(flua_State state, ffi.Pointer<ffi.Char> name);
+@ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_setglobalnil',
+)
+external void setglobalnil(State state, ffi.Pointer<ffi.Char> name);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int64)>()
-external void flua_push_int(flua_State state, int value);
+@ffi.Native<ffi.Void Function(State, ffi.Int64)>(symbol: 'flua_pushint')
+external void pushint(State state, int value);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Double)>()
-external void flua_push_double(flua_State state, double value);
+@ffi.Native<ffi.Void Function(State, ffi.Double)>(symbol: 'flua_pushdouble')
+external void pushdouble(State state, double value);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external void flua_push_string(flua_State state, ffi.Pointer<ffi.Char> value);
+@ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_pushstring',
+)
+external void pushstring(State state, ffi.Pointer<ffi.Char> value);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_push_bool(flua_State state, int value);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_pushbool')
+external void pushbool(State state, int value);
 
-@ffi.Native<ffi.Void Function(flua_State)>()
-external void flua_push_nil(flua_State state);
+@ffi.Native<ffi.Void Function(State)>(symbol: 'flua_pushnil')
+external void pushnil(State state);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_push_value(flua_State state, int idx);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_pushvalue')
+external void pushvalue(State state, int idx);
 
-@ffi.Native<ffi.Void Function(flua_State, flua_CFunction)>()
-external void flua_push_c_function(flua_State state, flua_CFunction fn);
+@ffi.Native<ffi.Void Function(State, CFunction)>(symbol: 'flua_pushcfunction')
+external void pushcfunction(State state, CFunction fn);
 
-@ffi.Native<ffi.Void Function(flua_State)>()
-external void flua_new_table(flua_State state);
+@ffi.Native<ffi.Void Function(State)>(symbol: 'flua_newtable')
+external void newtable(State state);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int)>()
-external void flua_create_table(flua_State state, int narray, int nrec);
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Int)>(
+  symbol: 'flua_createtable',
+)
+external void createtable(State state, int narray, int nrec);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Pointer<ffi.Char>)>()
-external void flua_set_field(
-  flua_State state,
-  int idx,
-  ffi.Pointer<ffi.Char> name,
-);
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_setfield',
+)
+external void setfield(State state, int idx, ffi.Pointer<ffi.Char> name);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_set_table(flua_State state, int idx);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_settable')
+external void settable(State state, int idx);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_raw_set(flua_State state, int idx);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_rawset')
+external void rawset(State state, int idx);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int64)>()
-external void flua_set_i(flua_State state, int idx, int n);
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Int64)>(symbol: 'flua_seti')
+external void seti(State state, int idx, int n);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int64)>()
-external void flua_raw_set_i(flua_State state, int idx, int n);
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Int64)>(
+  symbol: 'flua_rawseti',
+)
+external void rawseti(State state, int idx, int n);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external int flua_get_global_type(flua_State state, ffi.Pointer<ffi.Char> name);
+@ffi.Native<ffi.Int Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_getglobaltype',
+)
+external int getglobaltype(State state, ffi.Pointer<ffi.Char> name);
 
-@ffi.Native<ffi.Int64 Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external int flua_get_global_int(flua_State state, ffi.Pointer<ffi.Char> name);
+@ffi.Native<ffi.Int Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_getglobal',
+)
+external int getglobal(State state, ffi.Pointer<ffi.Char> name);
 
-@ffi.Native<ffi.Double Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external double flua_get_global_double(
-  flua_State state,
-  ffi.Pointer<ffi.Char> name,
-);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_gettable')
+external int gettable(State state, int idx);
 
-@ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external ffi.Pointer<ffi.Char> flua_get_global_string(
-  flua_State state,
-  ffi.Pointer<ffi.Char> name,
-);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_rawget')
+external int rawget(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external int flua_get_global_bool(flua_State state, ffi.Pointer<ffi.Char> name);
+@ffi.Native<ffi.Int Function(State, ffi.Int, ffi.Int64)>(symbol: 'flua_geti')
+external int geti(State state, int idx, int n);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external int flua_get_global(flua_State state, ffi.Pointer<ffi.Char> name);
+@ffi.Native<ffi.Int Function(State, ffi.Int, ffi.Int64)>(symbol: 'flua_rawgeti')
+external int rawgeti(State state, int idx, int n);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_get_table(flua_State state, int idx);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_pcall')
+external int pcall(State state, int arg_count);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_raw_get(flua_State state, int idx);
+@ffi.Native<ffi.Int64 Function(State, ffi.Int)>(symbol: 'flua_tointeger')
+external int tointeger(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int, ffi.Int64)>()
-external int flua_get_i(flua_State state, int idx, int n);
+@ffi.Native<ffi.Double Function(State, ffi.Int)>(symbol: 'flua_tonumber')
+external double tonumber(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int, ffi.Int64)>()
-external int flua_raw_get_i(flua_State state, int idx, int n);
+@ffi.Native<ffi.Pointer<ffi.Char> Function(State, ffi.Int)>(
+  symbol: 'flua_tostring',
+)
+external ffi.Pointer<ffi.Char> tostring(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Pointer<ffi.Char>)>()
-external int flua_prepare_pcall(
-  flua_State state,
-  ffi.Pointer<ffi.Char> func_name,
-);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_toboolean')
+external int toboolean(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_pcall(flua_State state, int arg_count);
+@ffi.Native<ffi.Double Function(State, ffi.Int)>(symbol: 'flua_checknumber')
+external double checknumber(State state, int arg);
 
-@ffi.Native<ffi.Int64 Function(flua_State, ffi.Int)>()
-external int flua_to_integer(flua_State state, int index);
+@ffi.Native<ffi.Double Function(State, ffi.Int, ffi.Double)>(
+  symbol: 'flua_optnumber',
+)
+external double optnumber(State state, int arg, double def);
 
-@ffi.Native<ffi.Double Function(flua_State, ffi.Int)>()
-external double flua_to_number(flua_State state, int index);
+@ffi.Native<ffi.Int64 Function(State, ffi.Int)>(symbol: 'flua_checkinteger')
+external int checkinteger(State state, int arg);
 
-@ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State, ffi.Int)>()
-external ffi.Pointer<ffi.Char> flua_to_string(flua_State state, int index);
+@ffi.Native<ffi.Int64 Function(State, ffi.Int, ffi.Int64)>(
+  symbol: 'flua_optinteger',
+)
+external int optinteger(State state, int arg, int def);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_to_boolean(flua_State state, int index);
-
-@ffi.Native<ffi.Double Function(flua_State, ffi.Int)>()
-external double flua_check_number(flua_State state, int arg);
-
-@ffi.Native<ffi.Double Function(flua_State, ffi.Int, ffi.Double)>()
-external double flua_opt_number(flua_State state, int arg, double def);
-
-@ffi.Native<ffi.Int64 Function(flua_State, ffi.Int)>()
-external int flua_check_integer(flua_State state, int arg);
-
-@ffi.Native<ffi.Int64 Function(flua_State, ffi.Int, ffi.Int64)>()
-external int flua_opt_integer(flua_State state, int arg, int def);
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State, ffi.Int)>()
-external ffi.Pointer<ffi.Char> flua_check_string(flua_State state, int arg);
+@ffi.Native<ffi.Pointer<ffi.Char> Function(State, ffi.Int)>(
+  symbol: 'flua_checklstring',
+)
+external ffi.Pointer<ffi.Char> checklstring(State state, int arg);
 
 @ffi.Native<
-  ffi.Pointer<ffi.Char> Function(flua_State, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<ffi.Char> flua_opt_string(
-  flua_State state,
+  ffi.Pointer<ffi.Char> Function(State, ffi.Int, ffi.Pointer<ffi.Char>)
+>(symbol: 'flua_optlstring')
+external ffi.Pointer<ffi.Char> optlstring(
+  State state,
   int arg,
   ffi.Pointer<ffi.Char> def,
 );
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Pointer<ffi.Char>)>()
-external void flua_check_stack(
-  flua_State state,
-  int sz,
-  ffi.Pointer<ffi.Char> msg,
-);
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_checkstack',
+)
+external void checkstack(State state, int sz, ffi.Pointer<ffi.Char> msg);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int)>()
-external void flua_check_type(flua_State state, int arg, int t);
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Int)>(
+  symbol: 'flua_checktype',
+)
+external void checktype(State state, int arg, int t);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_check_any(flua_State state, int arg);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_checkany')
+external void checkany(State state, int arg);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_is_none_or_nil(flua_State state, int arg);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_isnoneornil')
+external int isnoneornil(State state, int arg);
 
-@ffi.Native<ffi.Int Function()>()
-external int flua_lua_registryindex();
+@ffi.Native<ffi.Int Function()>(symbol: 'flua_registryindex')
+external int registryindex();
 
-@ffi.Native<ffi.Pointer<ffi.Char> Function(flua_State)>()
-external ffi.Pointer<ffi.Char> flua_error(flua_State state);
+@ffi.Native<ffi.Pointer<ffi.Char> Function(State)>(symbol: 'flua_error')
+external ffi.Pointer<ffi.Char> error(State state);
 
-@ffi.Native<ffi.Int Function(flua_State)>()
-external int flua_gettop(flua_State state);
+@ffi.Native<ffi.Int Function(State)>(symbol: 'flua_gettop')
+external int gettop(State state);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_pop(flua_State state, int n);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_pop')
+external void pop(State state, int n);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int)>()
-external void flua_set_top(flua_State state, int idx);
+@ffi.Native<ffi.Void Function(State, ffi.Int)>(symbol: 'flua_settop')
+external void settop(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_type(flua_State state, int idx);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_absindex')
+external int absindex(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_next(flua_State state, int idx);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_type')
+external int type(State state, int idx);
 
-@ffi.Native<ffi.Int Function(flua_State, ffi.Int)>()
-external int flua_ref(flua_State state, int idx);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_next')
+external int next(State state, int idx);
 
-@ffi.Native<ffi.Void Function(flua_State, ffi.Int, ffi.Int)>()
-external void flua_unref(flua_State state, int idx, int ref);
+@ffi.Native<ffi.Int Function(State, ffi.Int)>(symbol: 'flua_ref')
+external int ref(State state, int idx);
 
-typedef flua_State = ffi.Pointer<ffi.Void>;
-typedef flua_CFunctionFunction = ffi.Int Function(flua_State L);
-typedef Dartflua_CFunctionFunction = int Function(flua_State L);
-typedef flua_CFunction =
-    ffi.Pointer<ffi.NativeFunction<flua_CFunctionFunction>>;
+@ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Int)>(symbol: 'flua_unref')
+external void unref(State state, int idx, int ref$1);
+
+typedef State = ffi.Pointer<ffi.Void>;
+typedef CFunctionFunction = ffi.Int Function(State L);
+typedef DartCFunctionFunction = int Function(State L);
+typedef CFunction = ffi.Pointer<ffi.NativeFunction<CFunctionFunction>>;

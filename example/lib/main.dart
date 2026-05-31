@@ -240,10 +240,10 @@ class _TestWidgetState extends State<_TestWidget> {
       state.doString('s = dump(table)');
       buffer.writeln('   dump(table) = ${state['s']}\n');
 
-      state.pushFunction(_dartPrintPointer);
-      state.setGlobal('dartprint');
-      state.doString('dartprint(1)');
-      buffer.writeln('dartprint(1)');
+      state.pushFunction(_dartPrintNumberPointer);
+      state.setGlobal('dartprintnumber');
+      state.doString('dartprintnumber(42)');
+      buffer.writeln('dartprintnumber(42)');
     } finally {
       state.close();
     }
@@ -253,13 +253,17 @@ class _TestWidgetState extends State<_TestWidget> {
     });
   }
 
-  static int dartPrint(Pointer<Void> state) {
-    print('> print from dart, ');
+  static int dartPrintNumber(Pointer<Void> l) {
+    final state = LuaState.fromState(l);
+    final arg1 = state.optNumber(1, 0);
+
+    // ignore: avoid_print
+    print('> print from dart: $arg1');
     return 0;
   }
 
-  static final _dartPrintPointer =
-      Pointer.fromFunction<Int Function(Pointer<Void>)>(dartPrint, 0);
+  static final _dartPrintNumberPointer =
+      Pointer.fromFunction<Int Function(Pointer<Void>)>(dartPrintNumber, 0);
 
   @override
   Widget build(BuildContext context) {

@@ -29,7 +29,7 @@ void main() {
     expect(state['x'], 42);
 
     state['y'] = 3.14;
-    expect(state['y'], closeTo(3.14, 0.001));
+    expect(state['y'], 3.14);
 
     state['name'] = 'Flua';
     expect(state['name'], 'Flua');
@@ -89,15 +89,12 @@ void main() {
     final state = LuaState();
     addTearDown(state.close);
 
-    state.doString('''
-      function get_table()
-        return {a = 1, b = "hello", c = true}
-      end
-    ''');
+    state['table'] = {'a': 1, 'b': "hello", 'c': true};
 
-    final results = state.call('get_table');
-    expect(results.length, 1);
-    final table = results[0] as Map;
+    final result = state['table'];
+    expect(result is Map, isTrue);
+
+    final table = result as Map;
     expect(table['a'], 1);
     expect(table['b'], 'hello');
     expect(table['c'], isTrue);
@@ -107,15 +104,12 @@ void main() {
     final state = LuaState();
     addTearDown(state.close);
 
-    state.doString('''
-      function get_list()
-        return {10, 20, 30}
-      end
-    ''');
+    state['list'] = [10, 20, 30];
 
-    final results = state.call('get_list');
-    expect(results.length, 1);
-    final list = results[0] as Map;
+    final result = state['list'];
+    expect(result is Map, isTrue);
+
+    final list = result as Map;
     expect(list[1], 10);
     expect(list[2], 20);
     expect(list[3], 30);
@@ -137,15 +131,15 @@ void main() {
     expect(state['flag'], isFalse);
   });
 
-  test('_registryIndex matches C LUA_REGISTRYINDEX', () {
-    expect(kLuaRegistryIndex, equals(bindings.flua_lua_registryindex()));
+  test('kLuaRegistryIndex matches C LUA_REGISTRYINDEX', () {
+    expect(kLuaRegistryIndex, equals(bindings.registryindex()));
   });
 
   test('pushFunction registers a C function in Lua', () {
     final state = LuaState();
     addTearDown(state.close);
 
-    final ptr = Pointer.fromFunction<flua_CFunctionFunction>(_testCFunction, 0);
+    final ptr = Pointer.fromFunction<CFunctionFunction>(_testCFunction, 0);
     state.pushFunction(ptr);
     state.setGlobal('dartfunction');
     expect(state.typeOf('dartfunction'), LuaType.function);
