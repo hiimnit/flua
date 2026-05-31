@@ -3,10 +3,6 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-// TODO: inspiration https://github.com/neovim/neovim/blob/d788dd2811bfbfb0daa915ef974d072075a6bceb/src/nvim/lua/executor.c#L916
-// TODO: https://www.lua.org/pil/25.2.html
-// TODO: no pop no lua_settop?
-
 FFI_PLUGIN_EXPORT flua_State flua_create(void) {
   lua_State* L = luaL_newstate();
   if (L) {
@@ -257,7 +253,6 @@ FFI_PLUGIN_EXPORT int flua_registryindex(void) {
   return LUA_REGISTRYINDEX;
 }
 
-// TODO: remove this
 FFI_PLUGIN_EXPORT const char* flua_error(flua_State state) {
   lua_State* L = (lua_State*)state;
   if (lua_gettop(L) > 0) {

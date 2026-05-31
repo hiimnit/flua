@@ -70,8 +70,8 @@ class LuaState implements Finalizable {
   void doString(String code) {
     final nativeCode = code.toNativeUtf8();
     try {
-      final result = bindings.dostring(_state, nativeCode.cast());
-      if (result != 0) {
+      final status = bindings.dostring(_state, nativeCode.cast());
+      if (status != 0) {
         final errorPtr = bindings.error(_state);
         final error = errorPtr.address != 0
             ? errorPtr.cast<Utf8>().toDartString()
@@ -277,10 +277,9 @@ class LuaState implements Finalizable {
     return _getValueOfType(idx, type);
   }
 
-  // TODO different impl with a wrapper without throw?
   Object? _getValueOfType(int idx, LuaType? type) {
     switch (type) {
-      case LuaType.none: // TODO: different handling for none?
+      case LuaType.none:
       case LuaType.nil:
         return null;
       case LuaType.boolean:
@@ -304,9 +303,47 @@ class LuaState implements Finalizable {
         return const LuaUserData();
       case LuaType.thread:
         return const LuaThread();
-      default:
-        // TODO: LuaUnknown?
+      case null:
         throw LuaException('Unknown lua type.');
+    }
+  }
+
+  LuaValue getLuaValueAt(int idx) {
+    final type = typeAt(idx);
+    return getLuaValueOfType(idx, type);
+  }
+
+  LuaValue getLuaValueOfType(int idx, LuaType? type) {
+    switch (type) {
+      case LuaType.none:
+        return const LuaNone();
+      case LuaType.nil:
+        return const LuaNil();
+      case LuaType.boolean:
+        return LuaBool(bindings.toboolean(_state, idx) != 0);
+      case LuaType.number:
+        return LuaNumber(bindings.tonumber(_state, idx));
+      case LuaType.string:
+        final ptr = bindings.tostring(_state, idx);
+        return LuaString(
+          ptr.address != 0 ? ptr.cast<Utf8>().toDartString() : null,
+        );
+      case LuaType.table:
+        return LuaTable(_traverseTable(idx));
+      case LuaType.function:
+        // copy the value to the top of the stack
+        bindings.pushvalue(_state, idx);
+        // create a reference in registry
+        final ref = bindings.ref(_state, kLuaRegistryIndex);
+        return LuaFunction(ref, this);
+      case LuaType.lightuserdata:
+        return const LuaLightUserData();
+      case LuaType.userdata:
+        return const LuaUserData();
+      case LuaType.thread:
+        return const LuaThread();
+      case null:
+        return const LuaUnknown();
     }
   }
 
@@ -370,7 +407,47 @@ class LuaState implements Finalizable {
   int get top => bindings.gettop(_state);
 }
 
-class LuaFunction {
+sealed class LuaValue {
+  const LuaValue();
+}
+
+class LuaNone extends LuaValue {
+  const LuaNone();
+}
+
+class LuaNil extends LuaValue {
+  const LuaNil();
+}
+
+class LuaBool extends LuaValue {
+  final bool value;
+
+  const LuaBool(this.value);
+}
+
+class LuaLightUserData extends LuaValue {
+  const LuaLightUserData();
+}
+
+class LuaNumber extends LuaValue {
+  final double value;
+
+  const LuaNumber(this.value);
+}
+
+class LuaString extends LuaValue {
+  final String? value;
+
+  const LuaString(this.value);
+}
+
+class LuaTable extends LuaValue {
+  final Map value;
+
+  const LuaTable(this.value);
+}
+
+class LuaFunction extends LuaValue {
   final int ref;
   final LuaState _state;
   bool _valid;
@@ -392,14 +469,14 @@ class LuaFunction {
   }
 }
 
-class LuaLightUserData {
-  const LuaLightUserData();
-}
-
-class LuaUserData {
+class LuaUserData extends LuaValue {
   const LuaUserData();
 }
 
-class LuaThread {
+class LuaThread extends LuaValue {
   const LuaThread();
+}
+
+class LuaUnknown extends LuaValue {
+  const LuaUnknown();
 }

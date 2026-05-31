@@ -1,29 +1,12 @@
 # flua
 
-Embed Lua 5.4 in Flutter applications via Dart FFI. Execute Lua code, exchange data, and call Lua functions from Dart with a clean, high-level API.
-
-## TODO
-
-- Upgrade to 5.5?
+Embed Lua 5.4 in Flutter applications via Dart FFI. Execute Lua code, exchange data, and call Lua functions from Dart.
 
 ## Features
 
 - Execute Lua code strings and files
 - Get/set global variables with native Dart types
 - Call Lua functions with arguments and receive results
-- Automatic memory management with finalizers
-- Error handling with `LuaException`
-- No manual Lua stack manipulation required
-
-## Getting Started
-
-Add `flua` to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  flua:
-    path: ../flua
-```
 
 ## Usage
 
@@ -56,18 +39,7 @@ void main() {
   final result = lua.call('add', [5, 7]);
   print(result);  // [12.0]
   
-  // Clean up
   lua.close();
-}
-```
-
-### Error Handling
-
-```dart
-try {
-  lua.doString('invalid syntax!!!');
-} on LuaException catch (e) {
-  print('Lua error: ${e.message}');
 }
 ```
 
