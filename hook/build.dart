@@ -19,6 +19,7 @@ void main(List<String> args) async {
       defines: {
         'MAKE_LIB': null,
       },
+      libraries: ['m'],
     );
 
     await cbuilder.run(

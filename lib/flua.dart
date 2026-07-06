@@ -308,6 +308,16 @@ class LuaState implements Finalizable {
     }
   }
 
+  LuaValue getLuaValue(String name) {
+    final nativeName = name.toNativeUtf8();
+    try {
+      final type = bindings.getglobal(_state, nativeName.cast());
+      return getLuaValueOfType(-1, LuaType.from(type));
+    } finally {
+      malloc.free(nativeName);
+    }
+  }
+
   LuaValue getLuaValueAt(int idx) {
     final type = typeAt(idx);
     return getLuaValueOfType(idx, type);
