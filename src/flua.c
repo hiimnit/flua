@@ -23,6 +23,11 @@ FFI_PLUGIN_EXPORT int flua_dostring(flua_State state, const char* code) {
   return luaL_dostring(L, code);
 }
 
+FFI_PLUGIN_EXPORT int flua_loadstring(flua_State state, const char* code) {
+  lua_State* L = (lua_State*)state;
+  return luaL_loadstring(L, code);
+}
+
 FFI_PLUGIN_EXPORT int flua_absindex(flua_State state, int idx) {
   lua_State* L = (lua_State*)state;
   return lua_absindex(L, idx);
@@ -296,3 +301,42 @@ FFI_PLUGIN_EXPORT void flua_unref(flua_State state, int idx, int ref) {
   luaL_unref(L, idx, ref);
 }
 
+FFI_PLUGIN_EXPORT flua_State flua_newthread(flua_State state) {
+  lua_State* L = (lua_State*)state;
+  return (flua_State)lua_newthread(L);
+}
+
+FFI_PLUGIN_EXPORT int flua_resume(flua_State thread, flua_State from, int nargs) {
+  lua_State* F = (lua_State*)from;
+  lua_State* T = (lua_State*)thread;
+  int nresults = 0;
+  return lua_resume(T, F, nargs, &nresults);
+}
+
+FFI_PLUGIN_EXPORT int flua_status(flua_State state) {
+  lua_State* L = (lua_State*)state;
+  return lua_status(L);
+}
+
+static int flua_async_continuation(lua_State* L, int status, lua_KContext ctx) {
+  (void)status;
+  (void)ctx;
+  if (lua_toboolean(L, 1)) {
+    lua_remove(L, 1);
+    return lua_gettop(L);
+  }
+  const char* msg = lua_gettop(L) >= 2 ? lua_tostring(L, 2) : NULL;
+  return luaL_error(L, "%s", msg ? msg : "async function failed");
+}
+
+static int flua_async_trampoline(lua_State* L) {
+  lua_pushvalue(L, lua_upvalueindex(1));
+  lua_insert(L, 1);
+  return lua_yieldk(L, lua_gettop(L), 0, flua_async_continuation);
+}
+
+FFI_PLUGIN_EXPORT void flua_push_async_function(flua_State state, int64_t id) {
+  lua_State* L = (lua_State*)state;
+  lua_pushinteger(L, (lua_Integer)id);
+  lua_pushcclosure(L, flua_async_trampoline, 1);
+}

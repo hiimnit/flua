@@ -13,6 +13,7 @@ FFI_PLUGIN_EXPORT flua_State flua_create(void);
 FFI_PLUGIN_EXPORT void flua_close(flua_State state);
 
 FFI_PLUGIN_EXPORT int flua_dostring(flua_State state, const char* code);
+FFI_PLUGIN_EXPORT int flua_loadstring(flua_State state, const char* code);
 
 FFI_PLUGIN_EXPORT void flua_setglobal(flua_State state, const char* name);
 FFI_PLUGIN_EXPORT void flua_setglobalint(flua_State state, const char* name, int64_t value);
@@ -70,3 +71,9 @@ FFI_PLUGIN_EXPORT int flua_type(flua_State state, int idx);
 FFI_PLUGIN_EXPORT int flua_next(flua_State state, int idx);
 FFI_PLUGIN_EXPORT int flua_ref(flua_State state, int idx);
 FFI_PLUGIN_EXPORT void flua_unref(flua_State state, int idx, int ref);
+
+FFI_PLUGIN_EXPORT flua_State flua_newthread(flua_State state);
+FFI_PLUGIN_EXPORT int flua_resume(flua_State thread, flua_State from, int nargs);
+FFI_PLUGIN_EXPORT int flua_status(flua_State state);
+
+FFI_PLUGIN_EXPORT void flua_push_async_function(flua_State state, int64_t id);

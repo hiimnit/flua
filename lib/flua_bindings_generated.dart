@@ -15,6 +15,11 @@ external void close(State state);
 )
 external int dostring(State state, ffi.Pointer<ffi.Char> code);
 
+@ffi.Native<ffi.Int Function(State, ffi.Pointer<ffi.Char>)>(
+  symbol: 'flua_loadstring',
+)
+external int loadstring(State state, ffi.Pointer<ffi.Char> code);
+
 @ffi.Native<ffi.Void Function(State, ffi.Pointer<ffi.Char>)>(
   symbol: 'flua_setglobal',
 )
@@ -217,6 +222,20 @@ external int ref(State state, int idx);
 
 @ffi.Native<ffi.Void Function(State, ffi.Int, ffi.Int)>(symbol: 'flua_unref')
 external void unref(State state, int idx, int ref$1);
+
+@ffi.Native<State Function(State)>(symbol: 'flua_newthread')
+external State newthread(State state);
+
+@ffi.Native<ffi.Int Function(State, State, ffi.Int)>(symbol: 'flua_resume')
+external int resume(State thread, State from, int nargs);
+
+@ffi.Native<ffi.Int Function(State)>(symbol: 'flua_status')
+external int status(State state);
+
+@ffi.Native<ffi.Void Function(State, ffi.Int64)>(
+  symbol: 'flua_push_async_function',
+)
+external void push_async_function(State state, int id);
 
 typedef State = ffi.Pointer<ffi.Void>;
 typedef CFunctionFunction = ffi.Int Function(State L);

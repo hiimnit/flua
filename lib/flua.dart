@@ -41,11 +41,15 @@ enum LuaType {
 
 const kLuaRegistryIndex = -1001000;
 
+typedef LuaAsyncFunction = Future<List<Object?>> Function(List<Object?> args);
+
 class LuaState implements Finalizable {
   final bindings.State _state;
   bool _closed = false;
 
   static final _finalizer = NativeFinalizer(Native.addressOf(bindings.close));
+
+  final List<LuaAsyncFunction> _asyncHandlers = [];
 
   LuaState() : _state = bindings.create() {
     if (_state.address == 0) {
@@ -72,11 +76,7 @@ class LuaState implements Finalizable {
     try {
       final status = bindings.dostring(_state, nativeCode.cast());
       if (status != 0) {
-        final errorPtr = bindings.error(_state);
-        final error = errorPtr.address != 0
-            ? errorPtr.cast<Utf8>().toDartString()
-            : 'Unknown error';
-        throw LuaException(error);
+        throw LuaException(_errorMessage(_state));
       }
     } finally {
       malloc.free(nativeCode);
@@ -152,19 +152,18 @@ class LuaState implements Finalizable {
   }
 
   List<Object?> call(String funcName, [List<Object?> args = const []]) {
-    final nativeName = funcName.toNativeUtf8();
-    try {
-      final pretop = bindings.gettop(_state);
+    final pretop = bindings.gettop(_state);
 
-      final type = bindings.getglobal(_state, nativeName.cast());
-      if (LuaType.from(type) != LuaType.function) {
-        throw LuaException('$funcName is not a function.');
-      }
+    final type = _allocTryFree(
+      funcName,
+      (funcName) => bindings.getglobal(_state, funcName),
+    );
 
-      return _invokeFunction(pretop, args);
-    } finally {
-      malloc.free(nativeName);
+    if (LuaType.from(type) != LuaType.function) {
+      throw LuaException('$funcName is not a function.');
     }
+
+    return _invokeFunction(pretop, args);
   }
 
   List<Object?> _callLuaFunction(LuaFunction func, List<Object?> args) {
@@ -172,6 +171,7 @@ class LuaState implements Finalizable {
 
     final type = bindings.rawgeti(_state, kLuaRegistryIndex, func.ref);
     if (LuaType.from(type) != LuaType.function) {
+      // TODO: no cleanup?
       throw LuaException('$func is not a function.');
     }
 
@@ -185,11 +185,7 @@ class LuaState implements Finalizable {
 
     final status = bindings.pcall(_state, args.length);
     if (status != 0) {
-      final errorPtr = bindings.error(_state);
-      final error = errorPtr.address != 0
-          ? errorPtr.cast<Utf8>().toDartString()
-          : 'Unknown error';
-      throw LuaException(error);
+      throw LuaException(_errorMessage(_state));
     }
 
     return popResults(pretop);
@@ -415,6 +411,133 @@ class LuaState implements Finalizable {
   }
 
   int get top => bindings.gettop(_state);
+
+  void pushAsyncFunction(LuaAsyncFunction handler) {
+    _asyncHandlers.add(handler);
+    final id = _asyncHandlers.length - 1;
+    bindings.push_async_function(_state, id);
+  }
+
+  void registerGlobalAsyncFunction(String name, LuaAsyncFunction handler) {
+    pushAsyncFunction(handler);
+    setGlobal(name);
+  }
+
+  Future<List<Object?>> runAsync(String code) async {
+    return _runAsync((co) {
+      final status = _allocTryFree(
+        code,
+        (code) => bindings.loadstring(co._state, code),
+      );
+      if (status != 0) {
+        throw LuaException(_errorMessage(co._state));
+      }
+      return 0;
+    });
+  }
+
+  Future<List<Object?>> _callLuaFunctionAsync(
+    LuaFunction func,
+    List<Object?> args,
+  ) async {
+    return _runAsync((co) {
+      final type = bindings.rawgeti(co._state, kLuaRegistryIndex, func.ref);
+      if (LuaType.from(type) != LuaType.function) {
+        // TODO: no cleanup?
+        throw LuaException('$func is not a function.');
+      }
+
+      for (final arg in args) {
+        co.pushValue(arg);
+      }
+      return args.length;
+    });
+  }
+
+  Future<List<Object?>> _runAsync(
+    int Function(LuaState co) pushFunction,
+  ) async {
+    final co = LuaState.fromState(bindings.newthread(_state));
+    final threadRef = bindings.ref(_state, kLuaRegistryIndex);
+
+    try {
+      int nargs = pushFunction(co);
+
+      while (true) {
+        final status = bindings.resume(co._state, _state, nargs);
+
+        if (status == 1) {
+          nargs = await _handleAsyncYield(co);
+          continue;
+        }
+
+        if (status != 0) {
+          throw LuaException(_errorMessage(co._state));
+        }
+
+        final results = <Object?>[];
+        final resultTop = bindings.gettop(co._state);
+        for (int i = 1; i <= resultTop; ++i) {
+          results.add(co.getValueAt(i));
+        }
+        bindings.settop(co._state, 0);
+        return results;
+      }
+    } finally {
+      bindings.unref(_state, kLuaRegistryIndex, threadRef);
+    }
+  }
+
+  Future<int> _handleAsyncYield(LuaState co) async {
+    final yieldTop = co.top;
+
+    final id = co.typeAt(1) == LuaType.number
+        ? bindings.tointeger(co._state, 1)
+        : -1;
+    if (id < 0 || id >= _asyncHandlers.length) {
+      bindings.settop(co._state, 0);
+      throw LuaException(
+        'Unexpected yield from Lua coroutine: only calls to registered async '
+        'functions may yield to Dart.',
+      );
+    }
+
+    final args = <Object?>[];
+    for (int i = 2; i <= yieldTop; ++i) {
+      args.add(co.getValueAt(i));
+    }
+    bindings.settop(co._state, 0);
+
+    List<Object?> results;
+    bool ok;
+    try {
+      results = await _asyncHandlers[id](args);
+      ok = true;
+    } catch (e) {
+      results = [e.toString()];
+      ok = false;
+    }
+
+    co.pushBool(ok);
+    for (final result in results) {
+      co.pushValue(result);
+    }
+    return 1 + results.length;
+  }
+
+  static T _allocTryFree<T>(String string, T Function(Pointer<Char>) work) {
+    final nativeString = string.toNativeUtf8();
+    try {
+      return work(nativeString.cast());
+    } finally {
+      malloc.free(nativeString);
+    }
+  }
+
+  static String _errorMessage(bindings.State state) {
+    final ptr = bindings.error(state);
+    return ptr.address != 0 ? ptr.cast<Utf8>().toDartString() : 'Unknown error';
+  }
 }
 
 sealed class LuaValue {
@@ -473,7 +596,17 @@ class LuaFunction extends LuaValue {
     return _state._callLuaFunction(this, args);
   }
 
+  Future<List<Object?>> callAsync([List<Object?> args = const []]) {
+    if (!_valid) {
+      throw LuaException('Function reference is not valid.');
+    }
+    return _state._callLuaFunctionAsync(this, args);
+  }
+
   void unref() {
+    if (!_valid) {
+      return;
+    }
     _state._unref(ref);
     _valid = false;
   }
