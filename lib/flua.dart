@@ -118,6 +118,23 @@ class LuaState implements Finalizable {
     }
   }
 
+  void createTable(int narray, int nrec) =>
+      bindings.createtable(_state, narray, nrec);
+
+  void newLib(Map<String, LuaAsyncFunction> funcs) {
+    bindings.createtable(_state, 0, funcs.length);
+
+    for (final MapEntry(:key, value: func) in funcs.entries) {
+      final nativeKey = key.toNativeUtf8();
+      try {
+        pushAsyncFunction(func);
+        bindings.setfield(_state, -2, nativeKey.cast());
+      } finally {
+        malloc.free(nativeKey);
+      }
+    }
+  }
+
   void pushNewStringMapTable(Map<String, dynamic> table) {
     bindings.createtable(_state, 0, table.length);
 
