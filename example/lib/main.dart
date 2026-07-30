@@ -242,8 +242,31 @@ class _TestWidgetState extends State<_TestWidget> {
 
       state.pushFunction(_dartPrintNumberPointer);
       state.setGlobal('dartprintnumber');
+
       state.doString('dartprintnumber(42)');
       buffer.writeln('dartprintnumber(42)');
+
+      buffer.writeln('\n5. Call async Dart functions from Lua:');
+      state.registerGlobalAsyncFunction('fetch', (args) async {
+        final url = args.isNotEmpty ? args.first : '';
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        return ['<html>content of $url</html>'];
+      });
+      state.registerGlobalAsyncFunction('confirm', (args) async {
+        final confirmed = await showConfirmDialog(
+          context,
+          content: args.first.toString(),
+        );
+        return [confirmed];
+      });
+
+      final asyncResults = await state.runAsync('''
+        local confirmed = confirm("Async confirmation?")
+        local page = fetch("https://example.com")
+        return confirmed, page
+      ''');
+      buffer.writeln('   confirmed = ${asyncResults.first}');
+      buffer.writeln('   body = ${asyncResults.last}');
     } finally {
       state.close();
     }
@@ -288,4 +311,40 @@ class _TestWidgetState extends State<_TestWidget> {
       ],
     );
   }
+}
+
+class ConfirmDialog extends StatelessWidget {
+  final String content;
+
+  const ConfirmDialog({super.key, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Warning'),
+      content: Text(content),
+      actions: <Widget>[
+        TextButton(
+          child: Text('NO'),
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        ElevatedButton(
+          child: Text('YES'),
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
+    );
+  }
+}
+
+Future<bool> showConfirmDialog(
+  BuildContext context, {
+  required String content,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (_) => ConfirmDialog(content: content),
+  );
+
+  return result ?? false;
 }

@@ -7,6 +7,7 @@ Embed Lua 5.4 in Flutter applications via Dart FFI. Execute Lua code, exchange d
 - Execute Lua code strings and files
 - Get/set global variables with native Dart types
 - Call Lua functions with arguments and receive results
+- Call async Dart functions from Lua
 
 ## Usage
 
@@ -41,6 +42,31 @@ void main() {
   
   lua.close();
 }
+```
+
+### Async Dart Functions
+
+Register asynchronous Dart functions and call them from Lua as if they were ordinary functions. Under the hood the script runs inside a Lua coroutine: when it calls an async function the coroutine yields, the Dart `Future` is awaited, and the coroutine is resumed with the result. The Lua code reads as plain sequential logic with no explicit callbacks.
+
+```dart
+final lua = LuaState();
+
+// Expose an async Dart function to Lua as the global `fetch`.
+lua.registerAsyncFunction('fetch', (args) async {
+  final url = args.first as String;
+  final response = await http.get(Uri.parse(url));
+  return [response.body]; // return values handed back to Lua
+});
+
+// Run a script that calls it. `fetch(...)` suspends until the Future completes.
+final results = await lua.runAsync('''
+  local page = fetch("https://example.com")
+  return page
+''');
+
+print(results);
+
+lua.close();
 ```
 
 ### Type Support
