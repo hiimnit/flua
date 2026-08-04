@@ -222,6 +222,15 @@ class LuaState implements Finalizable {
     }
   }
 
+  void setField(int idx, String name) {
+    final nativeName = name.toNativeUtf8();
+    try {
+      bindings.setfield(_state, idx, nativeName.cast());
+    } finally {
+      malloc.free(nativeName);
+    }
+  }
+
   void pushValue(Object? value) {
     if (value == null) {
       pushNull();
